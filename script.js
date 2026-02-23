@@ -4,6 +4,8 @@
 
 // --- State ---
 let state = {
+    currentPlayer: null,
+    profiles: {}, // { name: { balance: 1000 } }
     balance: 1000,
     duckCount: 4,
     ducks: [],
@@ -17,7 +19,7 @@ let state = {
 const GOAL_SCORE = 20;
 const TICK_INTERVAL = 250;
 const BET_INCREMENT = 50;
-const MAX_BETTING_DUCKS = 3;
+let maxBettingDucks = 3;
 const SPRITE_URL = './pixel_duck.svg';
 
 const PERSONALITIES = [
@@ -34,6 +36,7 @@ const PERSONALITIES = [
 
 // --- Selectors ---
 const balanceEl = document.getElementById('coin-balance');
+const playerNameEl = document.getElementById('player-name');
 const totalBetEl = document.getElementById('total-bet-display');
 const duckCountDisplay = document.getElementById('duck-count-display');
 const duckMinusBtn = document.getElementById('duck-minus');
@@ -52,9 +55,15 @@ const duckListEl = document.getElementById('duck-list');
 const raceTrackEl = document.getElementById('race-track');
 const raceStatusEl = document.getElementById('race-status');
 
+const loginOverlay = document.getElementById('login-overlay');
+const profileListEl = document.getElementById('profile-list');
+const newPlayerInput = document.getElementById('new-player-input');
+const createProfileBtn = document.getElementById('create-profile');
+
 // --- Initialization ---
-function init() {
-    updateUI();
+async function init() {
+    await loadGlobalData();
+    showLogin();
 
     duckMinusBtn.onclick = () => {
         if (state.duckCount > 3) {
@@ -74,11 +83,85 @@ function init() {
     startRaceBtn.onclick = startRace;
     backToSetupBtn.onclick = resetBets;
     newRaceBtn.onclick = () => switchSection(resultSection, setupSection);
+
+    createProfileBtn.onclick = createNewProfile;
+}
+
+const API_URL = '/api';
+
+// --- Persistence ---
+async function loadGlobalData() {
+    try {
+        const res = await fetch(`${API_URL}/profiles`);
+        state.profiles = await res.json();
+    } catch (e) {
+        console.error("Failed to load from backend, trying localStorage as fallback", e);
+        const data = localStorage.getItem('duck_derby_v1');
+        if (data) state.profiles = JSON.parse(data);
+    }
+}
+
+async function saveGlobalData() {
+    if (!state.currentPlayer) return;
+
+    const profileData = { name: state.currentPlayer, balance: state.balance };
+
+    // Save to localStorage as quick cache
+    state.profiles[state.currentPlayer] = { balance: state.balance };
+    localStorage.setItem('duck_derby_v1', JSON.stringify(state.profiles));
+
+    try {
+        await fetch(`${API_URL}/profiles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profileData)
+        });
+    } catch (e) {
+        console.error("Failed to save to backend", e);
+    }
+}
+
+function showLogin() {
+    loginOverlay.classList.remove('hidden');
+    renderProfileList();
+}
+
+function renderProfileList() {
+    profileListEl.innerHTML = '';
+    Object.keys(state.profiles).forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'profile-item';
+        item.innerHTML = `<span>${name}</span><span>${state.profiles[name].balance} C</span>`;
+        item.onclick = () => selectProfile(name);
+        profileListEl.appendChild(item);
+    });
+}
+
+async function createNewProfile() {
+    const name = newPlayerInput.value.trim().toUpperCase();
+    if (!name) return;
+    if (state.profiles[name]) {
+        alert("NAME ALREADY EXISTS!");
+        return;
+    }
+    state.profiles[name] = { balance: 1000 };
+    await saveGlobalData();
+    selectProfile(name);
+    newPlayerInput.value = '';
+}
+
+function selectProfile(name) {
+    state.currentPlayer = name;
+    state.balance = state.profiles[name].balance;
+    loginOverlay.classList.add('hidden');
+    playerNameEl.textContent = name;
+    updateUI();
 }
 
 function updateUI() {
     balanceEl.textContent = state.balance;
     totalBetEl.textContent = state.totalBet;
+    saveGlobalData(); // Save on every UI update
 }
 
 function switchSection(from, to) {
@@ -91,6 +174,13 @@ function prepareBetting() {
     state.totalBet = 0;
     updateUI();
     startRaceBtn.disabled = true;
+
+    // Dynamic Max Bets: 2 for 3 ducks, 3 for others
+    maxBettingDucks = (state.duckCount === 3) ? 2 : 3;
+    const subtitle = document.querySelector('.subtitle');
+    if (subtitle) {
+        subtitle.textContent = `MAX ${maxBettingDucks} DUCKS / +50 PER CLICK`;
+    }
 
     // Generate Ducks
     state.ducks = [];
@@ -137,7 +227,7 @@ window.changeBet = function (id, amount) {
 
     if (amount > 0) {
         // Increment
-        if (!isAlreadyBetting && currentBettingCount >= MAX_BETTING_DUCKS) return;
+        if (!isAlreadyBetting && currentBettingCount >= maxBettingDucks) return;
         if (state.balance < amount) return;
 
         if (!state.bettingDucks[id]) state.bettingDucks[id] = 0;
@@ -176,7 +266,7 @@ function updateBettingListUI() {
         item.classList.remove('selected', 'locked');
         if (bet > 0) {
             item.classList.add('selected');
-        } else if (currentBettingCount >= MAX_BETTING_DUCKS) {
+        } else if (currentBettingCount >= maxBettingDucks) {
             item.classList.add('locked');
         }
     });

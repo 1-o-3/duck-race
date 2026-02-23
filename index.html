@@ -23,6 +23,10 @@
             </div>
             <div class="stats-bar">
                 <div class="stat-box">
+                    <span class="label">PLAYER:</span>
+                    <span id="player-name" class="value">---</span>
+                </div>
+                <div class="stat-box">
                     <span class="label">COINS:</span>
                     <span id="coin-balance" class="value">1000</span>
                 </div>
@@ -86,6 +90,20 @@
                 <button id="new-race" class="btn-pixel">NEXT RACE</button>
             </section>
         </main>
+    </div>
+
+    <!-- STARTUP OVERLAY -->
+    <div id="login-overlay" class="overlay hidden">
+        <div class="pixel-modal">
+            <h2 class="title-pixel">SELECT PROFILE</h2>
+            <div id="profile-list" class="profile-cards">
+                <!-- Profiles go here -->
+            </div>
+            <div class="new-profile-box">
+                <input type="text" id="new-player-input" placeholder="NEW RACER NAME" maxlength="12">
+                <button id="create-profile" class="btn-pixel">CREATE</button>
+            </div>
+        </div>
     </div>
 
     <!-- Hidden audio elements for later if needed -->
