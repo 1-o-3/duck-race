@@ -126,8 +126,12 @@ async function init() {
         startRace();
     };
     startRaceBtn.onclick = startRace;
-    backToSetupBtn.onclick = resetBets;
-    newRaceBtn.onclick = () => switchSection(resultSection, setupSection);
+    newRaceBtn.onclick = () => {
+        if (state.allInActive) {
+            state.allInActive = false;
+        }
+        switchSection(resultSection, setupSection);
+    };
 
     createProfileBtn.onclick = createNewProfile;
     loginSubmitBtn.onclick = verifyPin;
@@ -302,7 +306,7 @@ function prepareAllInRace() {
             <img src="${SPRITE_URL}" class="duck-icon" style="filter: hue-rotate(${i * 45}deg)">
             <div class="duck-info">
                 <span class="name">${duck.name}</span>
-                <span class="odds">WIN -> CROWN / LOSS -> RESET</span>
+                <span class="odds" style="visibility:hidden">ALL IN</span>
                 <span class="desc">${duck.desc}</span>
             </div>
             <div class="duck-item-bet">
@@ -659,19 +663,34 @@ function showResults() {
     updateUI();
     saveGlobalData(); // Ensure crown/reset is synced
 
-
     const winnerDisplay = document.getElementById('winner-announcement');
-    winnerDisplay.innerHTML = `
-        <img src="${SPRITE_URL}" style="filter: hue-rotate(${winnerDuck.id * 45}deg); width: 64px; height: 64px;">
-        <p style="margin-top:10px">${winnerDuck.name} WINS!</p>
-    `;
+    const payoutResultEl = document.getElementById('payout-result');
+    const payoutRowEl = document.getElementById('payout-row');
+    const titleEl = document.getElementById('result-title');
+    const newRaceBtn = document.getElementById('new-race');
 
-    const payoutEl = document.getElementById('payout-result');
-    payoutEl.textContent = `+${totalPayout}`;
-    payoutEl.style.color = totalPayout > 0 ? 'var(--primary)' : 'red';
+    if (state.allInActive) {
+        titleEl.textContent = wonCrown ? "HIT" : "GAME OVER";
+        payoutRowEl.style.display = 'none';
+        newRaceBtn.textContent = "RE:start";
 
-    const title = document.getElementById('result-title');
-    title.textContent = totalPayout > 0 ? "BIG WINNER!" : "GAME OVER";
+        winnerDisplay.innerHTML = `
+            <img src="${SPRITE_URL}" style="filter: hue-rotate(${winnerDuck.id * 45}deg); width: 64px; height: 64px;">
+            <p style="margin-top:10px">${wonCrown ? 'LEGENDARY SUCCESS!' : 'CHALLENGE FAILED...'}</p>
+        `;
+    } else {
+        titleEl.textContent = totalPayout > 0 ? "BIG WINNER!" : "GAME OVER";
+        payoutRowEl.style.display = 'block';
+        newRaceBtn.textContent = "NEXT RACE";
+
+        payoutResultEl.textContent = `+${totalPayout}`;
+        payoutResultEl.style.color = totalPayout > 0 ? 'var(--primary)' : 'red';
+
+        winnerDisplay.innerHTML = `
+            <img src="${SPRITE_URL}" style="filter: hue-rotate(${winnerDuck.id * 45}deg); width: 64px; height: 64px;">
+            <p style="margin-top:10px">${winnerDuck.name} WINS!</p>
+        `;
+    }
 
     switchSection(raceSection, resultSection);
 }
