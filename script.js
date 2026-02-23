@@ -8,6 +8,7 @@ let state = {
     profiles: {}, // { name: { balance: 1000 } }
     balance: 1000,
     duckCount: 4,
+    betUnit: 50,
     ducks: [],
     bettingDucks: {}, // { id: amount }
     totalBet: 0,
@@ -41,6 +42,9 @@ const totalBetEl = document.getElementById('total-bet-display');
 const duckCountDisplay = document.getElementById('duck-count-display');
 const duckMinusBtn = document.getElementById('duck-minus');
 const duckPlusBtn = document.getElementById('duck-plus');
+const unitMinusBtn = document.getElementById('unit-minus');
+const unitPlusBtn = document.getElementById('unit-plus');
+const unitDisplay = document.getElementById('unit-display');
 const prepareRaceBtn = document.getElementById('prepare-race');
 const startRaceBtn = document.getElementById('start-race');
 const backToSetupBtn = document.getElementById('back-to-setup');
@@ -85,6 +89,18 @@ async function init() {
             state.duckCount++;
             duckCountDisplay.textContent = state.duckCount;
         }
+    };
+
+    unitMinusBtn.onclick = () => {
+        if (state.betUnit > 50) {
+            state.betUnit -= 50;
+            unitDisplay.textContent = state.betUnit;
+        }
+    };
+
+    unitPlusBtn.onclick = () => {
+        state.betUnit += 50;
+        unitDisplay.textContent = state.betUnit;
     };
 
     prepareRaceBtn.onclick = prepareBetting;
@@ -263,23 +279,26 @@ function prepareBetting() {
                 <span class="desc">${duck.desc}</span>
             </div>
             <div class="duck-item-bet">
+                <div class="quick-btn-group">
+                    <button class="nano-btn" onclick="event.stopPropagation(); quickBet(${i}, 'HALF')">HALF</button>
+                    <button class="nano-btn" onclick="event.stopPropagation(); quickBet(${i}, 'ALL')">ALL</button>
+                </div>
                 <div class="bet-btn-group">
-                    <button class="mini-btn" onclick="event.stopPropagation(); changeBet(${i}, -50)">-50</button>
-                    <button class="mini-btn" onclick="event.stopPropagation(); changeBet(${i}, 50)">+50</button>
-                    <button class="mini-btn spec" onclick="event.stopPropagation(); quickBet(${i}, 'half')">1/2</button>
-                    <button class="mini-btn spec" onclick="event.stopPropagation(); quickBet(${i}, 'all')">ALL</button>
+                    <button class="mini-btn minus" onclick="event.stopPropagation(); changeBet(${i}, -state.betUnit)">-</button>
+                    <button class="mini-btn plus" onclick="event.stopPropagation(); changeBet(${i}, state.betUnit)">+</button>
                 </div>
                 <span class="bet-val">0</span>
             </div>
         `;
 
-        item.onclick = () => changeBet(i, 50);
+        item.onclick = () => changeBet(i, state.betUnit);
         duckListEl.appendChild(item);
     }
 
     switchSection(setupSection, bettingSection);
 }
 
+// --- Betting Actions ---
 window.changeBet = function (id, amount) {
     const isAlreadyBetting = state.bettingDucks[id] !== undefined;
     const currentBettingCount = Object.keys(state.bettingDucks).length;
@@ -297,7 +316,7 @@ window.changeBet = function (id, amount) {
         // Decrement
         if (!isAlreadyBetting || state.bettingDucks[id] <= 0) return;
 
-        const actualDec = Math.min(Math.abs(amount), state.bettingDucks[id]);
+        const actualDec = Math.min(state.bettingDucks[id], Math.abs(amount));
         state.bettingDucks[id] -= actualDec;
         state.totalBet -= actualDec;
         state.balance += actualDec;
@@ -317,14 +336,13 @@ window.quickBet = function (id, type) {
     const currentBettingCount = Object.keys(state.bettingDucks).length;
 
     if (!isAlreadyBetting && currentBettingCount >= maxBettingDucks) return;
+    if (state.balance <= 0) return;
 
     let amount = 0;
-    if (type === 'half') {
-        // Round to nearest 50
-        amount = Math.floor((state.balance / 2) / 50) * 50;
-    } else if (type === 'all') {
-        // All-in uses all available 50-unit increments
-        amount = Math.floor(state.balance / 50) * 50;
+    if (type === 'HALF') {
+        amount = Math.floor(state.balance / 2);
+    } else if (type === 'ALL') {
+        amount = state.balance;
     }
 
     if (amount <= 0) return;
