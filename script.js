@@ -52,7 +52,6 @@ const unitPlusBtn = document.getElementById('unit-plus');
 const unitDisplay = document.getElementById('unit-display');
 const prepareRaceBtn = document.getElementById('prepare-race');
 const startRaceBtn = document.getElementById('start-race');
-const backToSetupBtn = document.getElementById('back-to-setup');
 const newRaceBtn = document.getElementById('new-race');
 
 const setupSection = document.getElementById('setup-section');
@@ -590,8 +589,17 @@ function setupRaceTrack() {
     });
 }
 
-function getWeightedMove(weight) {
-    let move = Math.round(weight + (Math.random() * 6 - 3));
+function getWeightedMove(duck) {
+    // 1. Bonus for high odds ducks (Multiplier >= 4)
+    // "倍率が4以上の子は、乱数に+4を追加。ただ、重みづけに比例して確率はごく少"
+    if (duck.multiplier >= 4) {
+        // Base low chance (0.5%), adjusted by weight (low weight means even lower chance)
+        const bonusChance = Math.max(0.001, (duck.weight + 1) * 0.005);
+        if (Math.random() < bonusChance) return 4;
+    }
+
+    // 2. Standard weighted move
+    let move = Math.round(duck.weight + (Math.random() * 6 - 3));
     return Math.max(-3, Math.min(3, move));
 }
 
@@ -599,31 +607,44 @@ function raceLoop() {
     if (!state.raceActive) return;
 
     let raceFinished = false;
+    const finishersInThisTick = [];
 
     state.ducks.forEach(duck => {
-        const move = getWeightedMove(duck.weight);
-        duck.score += move;
-        if (duck.score < 0) duck.score = 0;
+        // Only move if not already finished
+        if (duck.score < GOAL_SCORE) {
+            const move = getWeightedMove(duck);
+            duck.score += move;
+            if (duck.score < 0) duck.score = 0;
 
-        const visualProgress = duck.score;
-        // 85% is finish line. Calculate position to allow passing it.
-        const percentage = (visualProgress / GOAL_SCORE) * 85;
+            const visualProgress = duck.score;
+            const percentage = (visualProgress / GOAL_SCORE) * 85;
 
-        const sprite = document.getElementById(`sprite-${duck.id}`);
-        if (sprite) {
-            sprite.style.left = `${percentage}%`;
-        }
-
-
-        if (duck.score >= GOAL_SCORE) {
-            if (!state.winners.includes(duck.id)) {
-                state.winners.push(duck.id);
+            const sprite = document.getElementById(`sprite-${duck.id}`);
+            if (sprite) {
+                sprite.style.left = `${percentage}%`;
             }
-            raceFinished = true;
+
+            if (duck.score >= GOAL_SCORE) {
+                finishersInThisTick.push(duck);
+                raceFinished = true;
+            }
         }
     });
 
     if (raceFinished) {
+        // Tie-breaker for simultaneous finish
+        // "同時にゴールした場合は、足した数字の個数が少ないほうが勝利"
+        // Interpretation: Fewer frames/steps to reach the goal. 
+        // In a simultaneous tick, the one who exceeded the goal by more (highest score) 
+        // is considered to have moved more efficiently/decisively.
+        finishersInThisTick.sort((a, b) => b.score - a.score);
+
+        finishersInThisTick.forEach(duck => {
+            if (!state.winners.includes(duck.id)) {
+                state.winners.push(duck.id);
+            }
+        });
+
         finishRace();
     } else {
         setTimeout(() => {
