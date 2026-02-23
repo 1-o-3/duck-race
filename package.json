@@ -1,15 +1,8 @@
 {
-  "name": "duck-race-backend",
+  "name": "duck-race",
   "version": "1.0.0",
-  "main": "server.js",
+  "type": "module",
   "dependencies": {
-    "@vercel/postgres": "^0.10.0",
-    "body-parser": "^1.20.1",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "lowdb": "^1.0.0"
-  },
-  "scripts": {
-    "start": "node server.js"
+    "@vercel/postgres": "^0.10.0"
   }
 }
