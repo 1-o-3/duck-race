@@ -34,7 +34,8 @@ const PERSONALITIES = [
     { name: "DRUNK DUCK", weight: 0.1, multiplier: 4.5, desc: "フラフラして予測不能" },
     { name: "SLEEPY DUCK", weight: 0.2, multiplier: 5.5, desc: "0（停留）が多くマイペース" },
     { name: "SLOW STICKER", weight: -0.3, multiplier: 6.2, desc: "とにかくのんびり屋" },
-    { name: "BACKWARD KING", weight: -0.5, multiplier: 7.0, desc: "マイナスが出やすい。勝てば伝説" }
+    { name: "BACKWARD KING", weight: -0.5, multiplier: 7.0, desc: "マイナスが出やすい。勝てば伝説" },
+    { name: "DARK HORSE", weight: 0.0, multiplier: 7.5, desc: "勝てば7.5倍、負ければ-1.5倍の超博打", isDarkHorse: true }
 ];
 
 
@@ -514,13 +515,24 @@ function showResults() {
     const winnerDuck = state.ducks.find(d => d.id === winnerId);
 
     // Check all bets
-    let totalPayout = 0;
+    let totalResult = 0;
+
+    // Winner payout
     if (state.bettingDucks[winnerId]) {
         const amount = state.bettingDucks[winnerId];
-        totalPayout = Math.floor(amount * winnerDuck.multiplier);
+        totalResult += Math.floor(amount * winnerDuck.multiplier);
     }
 
-    state.balance += totalPayout;
+    // Dark Horse Penalty (If you bet on it and it LOST)
+    state.ducks.forEach(duck => {
+        if (duck.isDarkHorse && duck.id !== winnerId && state.bettingDucks[duck.id]) {
+            const betAmount = state.bettingDucks[duck.id];
+            totalResult -= Math.floor(betAmount * 1.5);
+        }
+    });
+
+    state.balance += totalResult;
+    if (state.balance < 0) state.balance = 0;
     updateUI();
 
     const winnerDisplay = document.getElementById('winner-announcement');
@@ -530,11 +542,16 @@ function showResults() {
     `;
 
     const payoutEl = document.getElementById('payout-result');
-    payoutEl.textContent = `+${totalPayout}`;
-    payoutEl.style.color = totalPayout > 0 ? 'var(--primary)' : 'red';
+    if (totalResult >= 0) {
+        payoutEl.textContent = `+${totalResult}`;
+        payoutEl.style.color = 'var(--primary)';
+    } else {
+        payoutEl.textContent = `${totalResult}`;
+        payoutEl.style.color = 'red';
+    }
 
     const title = document.getElementById('result-title');
-    title.textContent = totalPayout > 0 ? "BIG WINNER!" : "GAME OVER";
+    title.textContent = totalResult > 0 ? "BIG WINNER!" : (totalResult < 0 ? "BIG LOSS..." : "GAME OVER");
 
     switchSection(raceSection, resultSection);
 }
