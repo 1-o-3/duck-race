@@ -264,8 +264,10 @@ function prepareBetting() {
             </div>
             <div class="duck-item-bet">
                 <div class="bet-btn-group">
-                    <button class="mini-btn minus" onclick="event.stopPropagation(); changeBet(${i}, -50)">-</button>
-                    <button class="mini-btn plus" onclick="event.stopPropagation(); changeBet(${i}, 50)">+</button>
+                    <button class="mini-btn" onclick="event.stopPropagation(); changeBet(${i}, -50)">-50</button>
+                    <button class="mini-btn" onclick="event.stopPropagation(); changeBet(${i}, 50)">+50</button>
+                    <button class="mini-btn spec" onclick="event.stopPropagation(); quickBet(${i}, 'half')">1/2</button>
+                    <button class="mini-btn spec" onclick="event.stopPropagation(); quickBet(${i}, 'all')">ALL</button>
                 </div>
                 <span class="bet-val">0</span>
             </div>
@@ -295,14 +297,42 @@ window.changeBet = function (id, amount) {
         // Decrement
         if (!isAlreadyBetting || state.bettingDucks[id] <= 0) return;
 
-        state.bettingDucks[id] += amount; // amount is negative
-        state.totalBet += amount;
-        state.balance -= amount;
+        const actualDec = Math.min(Math.abs(amount), state.bettingDucks[id]);
+        state.bettingDucks[id] -= actualDec;
+        state.totalBet -= actualDec;
+        state.balance += actualDec;
 
         if (state.bettingDucks[id] <= 0) {
             delete state.bettingDucks[id];
         }
     }
+
+    updateUI();
+    updateBettingListUI();
+    startRaceBtn.disabled = (state.totalBet <= 0);
+};
+
+window.quickBet = function (id, type) {
+    const isAlreadyBetting = state.bettingDucks[id] !== undefined;
+    const currentBettingCount = Object.keys(state.bettingDucks).length;
+
+    if (!isAlreadyBetting && currentBettingCount >= maxBettingDucks) return;
+
+    let amount = 0;
+    if (type === 'half') {
+        // Round to nearest 50
+        amount = Math.floor((state.balance / 2) / 50) * 50;
+    } else if (type === 'all') {
+        // All-in uses all available 50-unit increments
+        amount = Math.floor(state.balance / 50) * 50;
+    }
+
+    if (amount <= 0) return;
+
+    if (!state.bettingDucks[id]) state.bettingDucks[id] = 0;
+    state.bettingDucks[id] += amount;
+    state.totalBet += amount;
+    state.balance -= amount;
 
     updateUI();
     updateBettingListUI();

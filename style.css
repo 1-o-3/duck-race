@@ -221,7 +221,7 @@ header {
 
 .duck-item-bet {
     text-align: right;
-    min-width: 80px;
+    min-width: 120px;
 }
 
 .duck-item-bet .bet-label {
@@ -334,17 +334,23 @@ header {
     background: #333;
     border: 2px solid #555;
     color: white;
-    width: 24px;
+    width: 36px;
     height: 24px;
-    font-size: 14px;
+    font-size: 8px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
+.mini-btn.spec {
+    border-color: var(--secondary);
+    color: var(--secondary);
+}
+
 .mini-btn:hover {
     background: #555;
+    border-color: var(--primary);
 }
 
 /* Status & Winner */
