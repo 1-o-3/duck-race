@@ -328,8 +328,8 @@ function selectAllInDuck(id) {
 }
 
 function prepareBetting() {
-    // Check for ALL IN RACE Trigger (9,999,999 coins)
-    if (state.balance >= 9999999) {
+    // Check for ALL IN RACE Trigger (999,999,999 coins - Max 9s within 32-bit Integer)
+    if (state.balance >= 999999999) {
         prepareAllInRace();
         return;
     }
@@ -636,7 +636,9 @@ function showResults() {
         if (wonCrown) {
             state.profiles[state.currentPlayer].hasCrown = true;
             crownIconEl.classList.remove('hidden');
-            totalPayout = state.totalBet; // Keep the original coins when winning crown
+            state.balance = 1000; // Reset to 1000 coins after getting the crown
+            totalPayout = 0;
+            alert("LEGENDARY! YOU GAINED THE CROWN! BALANCE RESET TO 1000.");
         } else {
             // LOST ALL IN RACE
             state.balance = 100; // Reset to 100 coins
