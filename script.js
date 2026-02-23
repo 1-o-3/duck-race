@@ -9,6 +9,7 @@ let state = {
     balance: 1000,
     initialBalance: 1000,
     duckCount: 4,
+    allInActive: false,
     betUnit: 50,
     ducks: [],
     bettingDucks: {}, // { id: amount }
@@ -63,6 +64,11 @@ const duckListEl = document.getElementById('duck-list');
 const raceTrackEl = document.getElementById('race-track');
 const raceStatusEl = document.getElementById('race-status');
 
+const allInRaceSection = document.getElementById('all-in-race-section');
+const allInDuckListEl = document.getElementById('all-in-duck-list');
+const allInStartBtn = document.getElementById('all-in-start-btn');
+const crownIconEl = document.getElementById('crown-icon');
+
 const loginOverlay = document.getElementById('login-overlay');
 const profileListEl = document.getElementById('profile-list');
 const createProfileBox = document.getElementById('create-profile-box');
@@ -113,6 +119,12 @@ async function init() {
     };
 
     prepareRaceBtn.onclick = prepareBetting;
+    allInStartBtn.onclick = () => {
+        state.totalBet = state.balance;
+        state.balance = 0;
+        updateUI();
+        startRace();
+    };
     startRaceBtn.onclick = startRace;
     backToSetupBtn.onclick = resetBets;
     newRaceBtn.onclick = () => switchSection(resultSection, setupSection);
@@ -144,13 +156,14 @@ async function saveGlobalData() {
         balance: state.balance
     };
 
-    // Also include PIN if it's in our local state (usually for updates)
-    if (state.profiles[state.currentPlayer]?.pin) {
+    // Include PIN and Crown status
+    if (state.profiles[state.currentPlayer]) {
         profileData.pin = state.profiles[state.currentPlayer].pin;
+        profileData.hasCrown = state.profiles[state.currentPlayer].hasCrown || false;
     }
 
     // Save to localStorage as quick cache
-    state.profiles[state.currentPlayer] = { ...state.profiles[state.currentPlayer], balance: state.balance };
+    state.profiles[state.currentPlayer] = { ...state.profiles[state.currentPlayer], balance: state.balance, hasCrown: profileData.hasCrown };
     localStorage.setItem('duck_derby_v1', JSON.stringify(state.profiles));
 
     try {
@@ -178,7 +191,8 @@ function renderProfileList() {
     Object.keys(state.profiles).forEach(name => {
         const item = document.createElement('div');
         item.className = 'profile-item';
-        item.innerHTML = `<span>${name}</span><span>${state.profiles[name].balance} C</span>`;
+        const hasCrown = state.profiles[name].hasCrown ? '<span class="crown">👑</span>' : '';
+        item.innerHTML = `<span>${name}${hasCrown}</span><span>${state.profiles[name].balance} C</span>`;
         item.onclick = () => promptPin(name);
         profileListEl.appendChild(item);
     });
@@ -236,6 +250,13 @@ function selectProfile(name) {
     state.balance = state.profiles[name].balance;
     loginOverlay.classList.add('hidden');
     playerNameEl.textContent = name;
+
+    if (state.profiles[name].hasCrown) {
+        crownIconEl.classList.remove('hidden');
+    } else {
+        crownIconEl.classList.add('hidden');
+    }
+
     loginPinInput.value = '';
     updateUI();
 }
@@ -251,7 +272,69 @@ function switchSection(from, to) {
     to.classList.remove('hidden');
 }
 
+function prepareAllInRace() {
+    state.allInActive = true;
+    state.bettingDucks = {};
+    state.duckCount = 8;
+    state.totalBet = 0;
+    allInStartBtn.disabled = true;
+
+    // Generate 8 Ducks
+    state.ducks = [];
+    const shuffled = [...PERSONALITIES].sort(() => Math.random() - 0.5);
+
+    allInDuckListEl.innerHTML = '';
+    for (let i = 0; i < 8; i++) {
+        const duck = {
+            id: i,
+            ...shuffled[i % shuffled.length],
+            score: 0
+        };
+        state.ducks.push(duck);
+
+        const item = document.createElement('div');
+        item.className = 'duck-item';
+        item.dataset.id = i;
+        item.innerHTML = `
+            <img src="${SPRITE_URL}" class="duck-icon" style="filter: hue-rotate(${i * 45}deg)">
+            <div class="duck-info">
+                <span class="name">${duck.name}</span>
+                <span class="odds">WIN -> CROWN / LOSS -> RESET</span>
+                <span class="desc">${duck.desc}</span>
+            </div>
+            <div class="duck-item-bet">
+                <span class="bet-val">0</span>
+            </div>
+        `;
+
+        item.onclick = () => selectAllInDuck(i);
+        allInDuckListEl.appendChild(item);
+    }
+
+    switchSection(setupSection, allInRaceSection);
+}
+
+function selectAllInDuck(id) {
+    state.bettingDucks = { [id]: state.balance }; // Force all-in on exactly one
+
+    const items = allInDuckListEl.querySelectorAll('.duck-item');
+    items.forEach(item => {
+        const itemId = parseInt(item.dataset.id);
+        item.classList.toggle('selected', itemId === id);
+        item.querySelector('.bet-val').textContent = (itemId === id) ? 'ALL IN' : '0';
+    });
+
+    allInStartBtn.disabled = false;
+}
+
 function prepareBetting() {
+    // Check for ALL IN RACE Trigger (9,999,999 coins)
+    if (state.balance >= 9999999) {
+        prepareAllInRace();
+        return;
+    }
+
+    state.allInActive = false;
     state.bettingDucks = {};
     state.totalBet = 0;
     state.initialBalance = state.balance;
@@ -405,7 +488,11 @@ function resetBets() {
 // --- Race ---
 
 function startRace() {
-    switchSection(bettingSection, raceSection);
+    if (state.allInActive) {
+        switchSection(allInRaceSection, raceSection);
+    } else {
+        switchSection(bettingSection, raceSection);
+    }
     setupRaceTrack();
 
     state.raceActive = true;
@@ -516,29 +603,52 @@ function showResults() {
 
     // Calculate payouts
     let totalPayout = 0;
+    let wonCrown = false;
 
     // 1. Regular win payout
     if (state.bettingDucks[winnerId]) {
         const amount = state.bettingDucks[winnerId];
         totalPayout = Math.floor(amount * winnerDuck.multiplier);
+
+        if (state.allInActive) {
+            wonCrown = true;
+        }
     }
 
     // 2. Specialized Penalty for DARK HORSE
     // If you bet on DARK HORSE and it's NOT the winner, apply penalty
-    state.ducks.forEach(duck => {
-        if (duck.name === "DARK HORSE" && state.bettingDucks[duck.id] && duck.id !== winnerId) {
-            const betOnDarkHorse = state.bettingDucks[duck.id];
-            // Penalty: lose 1.5x the bet. 
-            // Note: the 1.0x (original bet) is already deducted at changeBet.
-            // So we subtract an additional 0.5x to make it 1.5x total loss.
-            const extraLoss = Math.floor(betOnDarkHorse * 0.5);
-            state.balance -= extraLoss;
-            if (state.balance < 0) state.balance = 0;
+    if (!state.allInActive) {
+        state.ducks.forEach(duck => {
+            if (duck.name === "DARK HORSE" && state.bettingDucks[duck.id] && duck.id !== winnerId) {
+                const betOnDarkHorse = state.bettingDucks[duck.id];
+                // Penalty: lose 1.5x the bet.
+                // Note: the 1.0x (original bet) is already deducted at changeBet.
+                // So we subtract an additional 0.5x to make it 1.5x total loss.
+                const extraLoss = Math.floor(betOnDarkHorse * 0.5);
+                state.balance -= extraLoss;
+                if (state.balance < 0) state.balance = 0;
+            }
+        });
+    }
+
+    // ALL IN RACE Logic
+    if (state.allInActive) {
+        if (wonCrown) {
+            state.profiles[state.currentPlayer].hasCrown = true;
+            crownIconEl.classList.remove('hidden');
+            totalPayout = state.totalBet; // Keep the original coins when winning crown
+        } else {
+            // LOST ALL IN RACE
+            state.balance = 100; // Reset to 100 coins
+            totalPayout = 0;
+            alert("ALL IN RACE FAILED... BALANCE RESET TO 100.");
         }
-    });
+    }
 
     state.balance += totalPayout;
     updateUI();
+    saveGlobalData(); // Ensure crown/reset is synced
+
 
     const winnerDisplay = document.getElementById('winner-announcement');
     winnerDisplay.innerHTML = `

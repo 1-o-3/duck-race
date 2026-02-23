@@ -483,3 +483,47 @@ header {
     outline: none;
     border-color: var(--primary);
 }
+
+.title-pixel.danger {
+    color: #ff0000;
+    text-shadow: 2px 2px #550000;
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+}
+
+.special-notice {
+    background: #200;
+    border: 2px solid #f00;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 8px;
+    line-height: 1.6;
+}
+
+.btn-pixel.gold {
+    background: #ffd700;
+    color: #000;
+    border-color: #fff;
+    font-weight: bold;
+}
+
+.btn-pixel.gold:hover {
+    background: #fff;
+    box-shadow: 0 0 15px #ffd700;
+}
+
+#crown-icon {
+    font-size: 14px;
+    filter: drop-shadow(0 0 5px gold);
+    vertical-align: middle;
+}
+
+.profile-item .crown {
+    margin-left: 5px;
+}
+

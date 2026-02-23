@@ -19,12 +19,15 @@
         <header>
             <div class="logo">
                 <img src="pixel_duck.svg" alt="Duck" class="logo-pixel">
-                <h1>DUCK DERBY</h1>
+                <h1 id="header-logo-text">DUCK DERBY</h1>
             </div>
             <div class="stats-bar">
                 <div class="stat-box">
                     <span class="label">PLAYER:</span>
-                    <span id="player-name" class="value">---</span>
+                    <span id="player-display" class="value">
+                        <span id="player-name">---</span>
+                        <span id="crown-icon" class="hidden">👑</span>
+                    </span>
                 </div>
                 <div class="stat-box">
                     <span class="label">COINS:</span>
@@ -80,6 +83,22 @@
                 </div>
                 <div id="race-track" class="pixel-track">
                     <!-- Lanes -->
+                </div>
+            </section>
+
+            <!-- STAGE 3.5: SPECIAL ALL IN RACE -->
+            <section id="all-in-race-section" class="screen hidden">
+                <h2 class="title-pixel danger">★ ALL IN RACE ★</h2>
+                <div class="special-notice">
+                    <p>LEGENDARY LIMIT REACHED!</p>
+                    <p>このレースでは1羽にだけ全額賭けられます。</p>
+                    <p>勝てば【称号】を獲得！負ければやり直しです。</p>
+                </div>
+                <div id="all-in-duck-list" class="duck-bet-list">
+                    <!-- Ducks injected here -->
+                </div>
+                <div class="bet-actions">
+                    <button id="all-in-start-btn" class="btn-pixel gold" disabled>ALL IN & START!</button>
                 </div>
             </section>
 
