@@ -7,6 +7,7 @@ let state = {
     currentPlayer: null,
     profiles: {}, // { name: { balance: 1000 } }
     balance: 1000,
+    initialBalance: 1000,
     duckCount: 4,
     betUnit: 50,
     ducks: [],
@@ -99,7 +100,12 @@ async function init() {
     };
 
     unitPlusBtn.onclick = () => {
-        state.betUnit += 50;
+        const cap = Math.min(1000, Math.floor(state.balance / 50) * 50);
+        if (state.betUnit < cap) {
+            state.betUnit += 50;
+        } else {
+            state.betUnit = Math.max(50, cap);
+        }
         unitDisplay.textContent = state.betUnit;
     };
 
@@ -245,8 +251,16 @@ function switchSection(from, to) {
 function prepareBetting() {
     state.bettingDucks = {};
     state.totalBet = 0;
+    state.initialBalance = state.balance;
     updateUI();
     startRaceBtn.disabled = true;
+
+    // Adjust bet unit if it exceeds current potential
+    const unitCap = Math.min(1000, Math.floor(state.balance / 50) * 50);
+    if (state.betUnit > unitCap) {
+        state.betUnit = Math.max(50, unitCap);
+        unitDisplay.textContent = state.betUnit;
+    }
 
     // Dynamic Max Bets: 2 for 3 ducks, 3 for others
     maxBettingDucks = (state.duckCount === 3) ? 2 : 3;
@@ -340,12 +354,12 @@ window.quickBet = function (id, type) {
 
     let amount = 0;
     if (type === 'HALF') {
-        amount = Math.floor(state.balance / 2);
+        amount = Math.floor(state.initialBalance / 2);
     } else if (type === 'ALL') {
         amount = state.balance;
     }
 
-    if (amount <= 0) return;
+    if (amount <= 0 || state.balance < amount) return;
 
     if (!state.bettingDucks[id]) state.bettingDucks[id] = 0;
     state.bettingDucks[id] += amount;
