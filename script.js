@@ -134,12 +134,23 @@ async function init() {
             state.allInActive = false;
         }
 
-        // Special check: If balance is 0 but has crowns, force rescue
-        const crownCount = state.profiles[state.currentPlayer]?.crownCount || 0;
-        if (state.balance <= 0 && crownCount > 0) {
-            rescueCrownDisplay.textContent = crownCount > 1 ? `👑x${crownCount}` : `👑`;
-            switchSection(resultSection, crownRescueSection);
-            return;
+        // Ensure we have current crown count
+        const profile = state.profiles[state.currentPlayer];
+        const crownCount = profile ? (profile.crownCount || 0) : 0;
+
+        // Special check: If balance is 0
+        if (state.balance <= 0) {
+            if (crownCount > 0) {
+                // Show rescue screen
+                rescueCrownDisplay.textContent = crownCount > 1 ? `👑x${crownCount}` : `👑`;
+                switchSection(resultSection, crownRescueSection);
+                return;
+            } else {
+                // No crowns left: Automatic pity reset to 100
+                alert("BANKRUPT! BUT WE'LL GIVE YOU 100 COINS TO START OVER.");
+                state.balance = 100;
+                updateUI();
+            }
         }
 
         switchSection(resultSection, setupSection);
@@ -735,9 +746,19 @@ function showResults() {
             <p style="margin-top:10px">${wonCrown ? 'LEGENDARY SUCCESS!' : 'CHALLENGE FAILED...'}</p>
         `;
     } else {
+        const isBankrupt = state.balance <= 0;
+        const hasCrowns = (state.profiles[state.currentPlayer]?.crownCount || 0) > 0;
+
         titleEl.textContent = totalPayout > 0 ? "BIG WINNER!" : "GAME OVER";
         payoutRowEl.style.display = 'block';
-        newRaceBtn.textContent = "NEXT RACE";
+
+        if (isBankrupt && hasCrowns) {
+            newRaceBtn.textContent = "CROWN RESCUE";
+            newRaceBtn.classList.add('gold');
+        } else {
+            newRaceBtn.textContent = "NEXT RACE";
+            newRaceBtn.classList.remove('gold');
+        }
 
         payoutResultEl.textContent = `+${totalPayout}`;
         payoutResultEl.style.color = totalPayout > 0 ? 'var(--primary)' : 'red';
