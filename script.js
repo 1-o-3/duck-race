@@ -159,11 +159,11 @@ async function saveGlobalData() {
     // Include PIN and Crown status
     if (state.profiles[state.currentPlayer]) {
         profileData.pin = state.profiles[state.currentPlayer].pin;
-        profileData.hasCrown = state.profiles[state.currentPlayer].hasCrown || false;
+        profileData.crownCount = state.profiles[state.currentPlayer].crownCount || 0;
     }
 
     // Save to localStorage as quick cache
-    state.profiles[state.currentPlayer] = { ...state.profiles[state.currentPlayer], balance: state.balance, hasCrown: profileData.hasCrown };
+    state.profiles[state.currentPlayer] = { ...state.profiles[state.currentPlayer], balance: state.balance, crownCount: profileData.crownCount };
     localStorage.setItem('duck_derby_v1', JSON.stringify(state.profiles));
 
     try {
@@ -191,8 +191,9 @@ function renderProfileList() {
     Object.keys(state.profiles).forEach(name => {
         const item = document.createElement('div');
         item.className = 'profile-item';
-        const hasCrown = state.profiles[name].hasCrown ? '<span class="crown">👑</span>' : '';
-        item.innerHTML = `<span>${name}${hasCrown}</span><span>${state.profiles[name].balance} C</span>`;
+        const crownCount = state.profiles[name].crownCount || 0;
+        const crownDisplay = crownCount > 0 ? `<span class="crown">👑${crownCount > 1 ? 'x' + crownCount : ''}</span>` : '';
+        item.innerHTML = `<span>${name}${crownDisplay}</span><span>${state.profiles[name].balance} C</span>`;
         item.onclick = () => promptPin(name);
         profileListEl.appendChild(item);
     });
@@ -236,7 +237,7 @@ async function createNewProfile() {
         alert("NAME ALREADY EXISTS!");
         return;
     }
-    state.profiles[name] = { balance: 1000, pin: pin };
+    state.profiles[name] = { balance: 1000, pin: pin, crownCount: 0 };
     state.balance = 1000;
     state.currentPlayer = name;
     await saveGlobalData();
@@ -251,8 +252,10 @@ function selectProfile(name) {
     loginOverlay.classList.add('hidden');
     playerNameEl.textContent = name;
 
-    if (state.profiles[name].hasCrown) {
+    const crownCount = state.profiles[name].crownCount || 0;
+    if (crownCount > 0) {
         crownIconEl.classList.remove('hidden');
+        crownIconEl.textContent = crownCount > 1 ? '👑x' + crownCount : '👑';
     } else {
         crownIconEl.classList.add('hidden');
     }
@@ -275,16 +278,16 @@ function switchSection(from, to) {
 function prepareAllInRace() {
     state.allInActive = true;
     state.bettingDucks = {};
-    state.duckCount = 8;
+    state.duckCount = 6;
     state.totalBet = 0;
     allInStartBtn.disabled = true;
 
-    // Generate 8 Ducks
+    // Generate 6 Ducks
     state.ducks = [];
     const shuffled = [...PERSONALITIES].sort(() => Math.random() - 0.5);
 
     allInDuckListEl.innerHTML = '';
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
         const duck = {
             id: i,
             ...shuffled[i % shuffled.length],
@@ -634,11 +637,16 @@ function showResults() {
     // ALL IN RACE Logic
     if (state.allInActive) {
         if (wonCrown) {
-            state.profiles[state.currentPlayer].hasCrown = true;
+            const currentCount = state.profiles[state.currentPlayer].crownCount || 0;
+            state.profiles[state.currentPlayer].crownCount = currentCount + 1;
+
+            const newCount = currentCount + 1;
             crownIconEl.classList.remove('hidden');
+            crownIconEl.textContent = newCount > 1 ? '👑x' + newCount : '👑';
+
             state.balance = 1000; // Reset to 1000 coins after getting the crown
             totalPayout = 0;
-            alert("LEGENDARY! YOU GAINED THE CROWN! BALANCE RESET TO 1000.");
+            alert(`LEGENDARY! YOU GAINED A CROWN! TOTAL: ${newCount}. BALANCE RESET TO 1000.`);
         } else {
             // LOST ALL IN RACE
             state.balance = 100; // Reset to 100 coins
