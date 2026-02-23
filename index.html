@@ -99,8 +99,15 @@
             <div id="profile-list" class="profile-cards">
                 <!-- Profiles go here -->
             </div>
-            <div class="new-profile-box">
+            <div id="pin-entry-box" class="new-profile-box hidden">
+                <p class="subtitle">ENTER 4-DIGIT PIN</p>
+                <input type="password" id="login-pin-input" placeholder="****" maxlength="4" pattern="\d*">
+                <button id="login-submit" class="btn-pixel">LOGIN</button>
+                <button id="login-cancel" class="btn-pixel secondary">CANCEL</button>
+            </div>
+            <div id="create-profile-box" class="new-profile-box">
                 <input type="text" id="new-player-input" placeholder="NEW RACER NAME" maxlength="12">
+                <input type="password" id="new-pin-input" placeholder="4-DIGIT PIN" maxlength="4" pattern="\d*">
                 <button id="create-profile" class="btn-pixel">CREATE</button>
             </div>
         </div>

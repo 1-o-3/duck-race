@@ -57,8 +57,16 @@ const raceStatusEl = document.getElementById('race-status');
 
 const loginOverlay = document.getElementById('login-overlay');
 const profileListEl = document.getElementById('profile-list');
+const createProfileBox = document.getElementById('create-profile-box');
+const pinEntryBox = document.getElementById('pin-entry-box');
 const newPlayerInput = document.getElementById('new-player-input');
+const newPinInput = document.getElementById('new-pin-input');
+const loginPinInput = document.getElementById('login-pin-input');
 const createProfileBtn = document.getElementById('create-profile');
+const loginSubmitBtn = document.getElementById('login-submit');
+const loginCancelBtn = document.getElementById('login-cancel');
+
+let loginPendingName = null;
 
 // --- Initialization ---
 async function init() {
@@ -85,6 +93,8 @@ async function init() {
     newRaceBtn.onclick = () => switchSection(resultSection, setupSection);
 
     createProfileBtn.onclick = createNewProfile;
+    loginSubmitBtn.onclick = verifyPin;
+    loginCancelBtn.onclick = cancelPinEntry;
 }
 
 const API_URL = '/api';
@@ -104,18 +114,27 @@ async function loadGlobalData() {
 async function saveGlobalData() {
     if (!state.currentPlayer) return;
 
-    const profileData = { name: state.currentPlayer, balance: state.balance };
+    const profileData = {
+        name: state.currentPlayer,
+        balance: state.balance
+    };
+
+    // Also include PIN if it's in our local state (usually for updates)
+    if (state.profiles[state.currentPlayer]?.pin) {
+        profileData.pin = state.profiles[state.currentPlayer].pin;
+    }
 
     // Save to localStorage as quick cache
-    state.profiles[state.currentPlayer] = { balance: state.balance };
+    state.profiles[state.currentPlayer] = { ...state.profiles[state.currentPlayer], balance: state.balance };
     localStorage.setItem('duck_derby_v1', JSON.stringify(state.profiles));
 
     try {
-        await fetch(`${API_URL}/profiles`, {
+        const response = await fetch(`${API_URL}/profiles`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profileData)
         });
+        if (!response.ok) throw new Error("API Save Failed");
     } catch (e) {
         console.error("Failed to save to backend", e);
     }
@@ -128,26 +147,63 @@ function showLogin() {
 
 function renderProfileList() {
     profileListEl.innerHTML = '';
+    createProfileBox.classList.remove('hidden');
+    pinEntryBox.classList.add('hidden');
+
     Object.keys(state.profiles).forEach(name => {
         const item = document.createElement('div');
         item.className = 'profile-item';
         item.innerHTML = `<span>${name}</span><span>${state.profiles[name].balance} C</span>`;
-        item.onclick = () => selectProfile(name);
+        item.onclick = () => promptPin(name);
         profileListEl.appendChild(item);
     });
 }
 
+function promptPin(name) {
+    loginPendingName = name;
+    createProfileBox.classList.add('hidden');
+    pinEntryBox.classList.remove('hidden');
+    loginPinInput.value = '';
+    loginPinInput.focus();
+}
+
+function verifyPin() {
+    const enteredPin = loginPinInput.value;
+    const actualPin = state.profiles[loginPendingName].pin;
+
+    if (enteredPin === actualPin) {
+        selectProfile(loginPendingName);
+    } else {
+        alert("INVALID PIN!");
+        loginPinInput.value = '';
+    }
+}
+
+function cancelPinEntry() {
+    loginPendingName = null;
+    pinEntryBox.classList.add('hidden');
+    createProfileBox.classList.remove('hidden');
+}
+
 async function createNewProfile() {
     const name = newPlayerInput.value.trim().toUpperCase();
-    if (!name) return;
+    const pin = newPinInput.value.trim();
+
+    if (!name || pin.length !== 4) {
+        alert("NAME AND 4-DIGIT PIN REQUIRED!");
+        return;
+    }
     if (state.profiles[name]) {
         alert("NAME ALREADY EXISTS!");
         return;
     }
-    state.profiles[name] = { balance: 1000 };
+    state.profiles[name] = { balance: 1000, pin: pin };
+    state.balance = 1000;
+    state.currentPlayer = name;
     await saveGlobalData();
     selectProfile(name);
     newPlayerInput.value = '';
+    newPinInput.value = '';
 }
 
 function selectProfile(name) {
@@ -155,6 +211,7 @@ function selectProfile(name) {
     state.balance = state.profiles[name].balance;
     loginOverlay.classList.add('hidden');
     playerNameEl.textContent = name;
+    loginPinInput.value = '';
     updateUI();
 }
 
