@@ -311,6 +311,20 @@ function selectProfile(name) {
 
     loginPinInput.value = '';
     updateUI();
+
+    // Check for low balance on login
+    if (state.balance < 50) {
+        if (crownCount > 0) {
+            // Show rescue screen
+            rescueCrownDisplay.textContent = crownCount > 1 ? `👑x${crownCount}` : `👑`;
+            switchSection(setupSection, crownRescueSection);
+        } else {
+            // Pity bonus
+            state.balance += 100;
+            updateUI();
+            alert("WELCOME BACK! LOW BALANCE BONUS: +100 COINS.");
+        }
+    }
 }
 
 function updateUI() {
