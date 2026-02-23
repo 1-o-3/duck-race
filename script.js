@@ -25,14 +25,16 @@ let maxBettingDucks = 3;
 const SPRITE_URL = './pixel_duck.svg';
 
 const PERSONALITIES = [
-    { name: "FLASH YELLOW", weight: 1.5, multiplier: 1.8, desc: "＋に進みやすい快速タイプ" },
-    { name: "STEADY TURTLE", weight: 0.8, multiplier: 2.5, desc: "着実に進む安定タイプ" },
-    { name: "CHAOS DICE", weight: 0.5, multiplier: 3.5, desc: "＋3か−3が出やすいギャンブラー" },
-    { name: "SLEEPY DUCK", weight: 0.2, multiplier: 5.0, desc: "0（停留）が多くマイペース" },
-    { name: "BACKWARD KING", weight: -0.5, multiplier: 15.0, desc: "マイナスが出やすい。勝てば伝説" },
+    { name: "SPEED DEMON", weight: 1.8, multiplier: 1.1, desc: "目にも留まらぬ超高速アヒル" },
+    { name: "FLASH YELLOW", weight: 1.5, multiplier: 1.4, desc: "＋に進みやすい快速タイプ" },
+    { name: "HOT FIGHTER", weight: 1.2, multiplier: 1.8, desc: "前向きな熱血タイプ" },
+    { name: "STEADY TURTLE", weight: 0.8, multiplier: 2.2, desc: "着実に進む安定タイプ" },
     { name: "STANDARD BIRD", weight: 0.4, multiplier: 2.8, desc: "バランスの取れた標準型" },
-    { name: "HOT FIGHTER", weight: 1.2, multiplier: 2.0, desc: "前向きな熱血タイプ" },
-    { name: "DRUNK DUCK", weight: 0.1, multiplier: 4.5, desc: "フラフラして予測不能" }
+    { name: "CHAOS DICE", weight: 0.5, multiplier: 3.5, desc: "＋3か−3が出やすいギャンブラー" },
+    { name: "DRUNK DUCK", weight: 0.1, multiplier: 4.5, desc: "フラフラして予測不能" },
+    { name: "SLEEPY DUCK", weight: 0.2, multiplier: 5.5, desc: "0（停留）が多くマイペース" },
+    { name: "SLOW STICKER", weight: -0.3, multiplier: 6.2, desc: "とにかくのんびり屋" },
+    { name: "BACKWARD KING", weight: -0.5, multiplier: 7.0, desc: "マイナスが出やすい。勝てば伝説" }
 ];
 
 
