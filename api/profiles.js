@@ -1,17 +1,20 @@
 import { sql } from '@vercel/postgres';
 
 export default async function handler(req, res) {
-    // Initialize table and ensure PIN column exists
+    // Debug: 環境変数が存在するかチェック
+    if (!process.env.POSTGRES_URL) {
+        return res.status(500).json({ error: "Environment variable POSTGRES_URL is missing. Please connect your Vercel Postgres storage." });
+    }
+
     try {
-        await sql`CREATE TABLE IF NOT EXISTS duck_profiles (name TEXT PRIMARY KEY, balance INTEGER);`;
-        // Add PIN column if it doesn't exist (using a simple try-catch for the alter)
+        // 起動時にテーブルとカラムの存在を確実にする
+        await sql`CREATE TABLE IF NOT EXISTS duck_profiles (name TEXT PRIMARY KEY, balance INTEGER, pin TEXT DEFAULT '0000');`;
         try {
             await sql`ALTER TABLE duck_profiles ADD COLUMN IF NOT EXISTS pin TEXT DEFAULT '0000';`;
-        } catch (e) {
-            // Column might already exist, which is fine
-        }
+        } catch (e) { /* ignore */ }
     } catch (e) {
-        console.error("Table initialization error", e);
+        console.error("DB Init Error:", e);
+        return res.status(500).json({ error: "Database initialization failed: " + e.message });
     }
 
     if (req.method === 'GET') {
@@ -23,7 +26,7 @@ export default async function handler(req, res) {
             }, {});
             return res.status(200).json(profiles);
         } catch (e) {
-            return res.status(500).json({ error: e.message });
+            return res.status(500).json({ error: "Fetch error: " + e.message });
         }
     }
 
@@ -49,7 +52,7 @@ export default async function handler(req, res) {
             }
             return res.status(200).json({ success: true });
         } catch (e) {
-            return res.status(500).json({ error: e.message });
+            return res.status(500).json({ error: "Save error: " + e.message });
         }
     }
 
