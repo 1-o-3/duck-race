@@ -72,6 +72,9 @@ const crownRescueSection = document.getElementById('crown-rescue-section');
 const rescueCrownDisplay = document.getElementById('rescue-crown-count');
 const rescueConfirmBtn = document.getElementById('rescue-confirm-btn');
 
+const pityBonusSection = document.getElementById('pity-bonus-section');
+const pityOkBtn = document.getElementById('pity-ok-btn');
+
 const loginOverlay = document.getElementById('login-overlay');
 const profileListEl = document.getElementById('profile-list');
 const createProfileBox = document.getElementById('create-profile-box');
@@ -146,14 +149,18 @@ async function init() {
                 switchSection(resultSection, crownRescueSection);
                 return;
             } else {
-                // No crowns left: Automatic pity reset to 100
-                alert("BANKRUPT! BUT WE'LL GIVE YOU 100 COINS TO START OVER.");
                 state.balance = 100;
                 updateUI();
+                switchSection(resultSection, pityBonusSection);
+                return;
             }
         }
 
         switchSection(resultSection, setupSection);
+    };
+
+    pityOkBtn.onclick = () => {
+        switchSection(pityBonusSection, setupSection);
     };
 
     rescueConfirmBtn.onclick = async () => {
@@ -319,10 +326,10 @@ function selectProfile(name) {
             rescueCrownDisplay.textContent = crownCount > 1 ? `👑x${crownCount}` : `👑`;
             switchSection(setupSection, crownRescueSection);
         } else {
-            // Pity bonus
+            // Pity bonus screen
             state.balance += 100;
             updateUI();
-            alert("WELCOME BACK! LOW BALANCE BONUS: +100 COINS.");
+            switchSection(setupSection, pityBonusSection);
         }
     }
 }
