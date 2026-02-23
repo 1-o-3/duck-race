@@ -69,6 +69,10 @@ const allInDuckListEl = document.getElementById('all-in-duck-list');
 const allInStartBtn = document.getElementById('all-in-start-btn');
 const crownIconEl = document.getElementById('crown-icon');
 
+const crownRescueSection = document.getElementById('crown-rescue-section');
+const rescueCrownDisplay = document.getElementById('rescue-crown-count');
+const rescueConfirmBtn = document.getElementById('rescue-confirm-btn');
+
 const loginOverlay = document.getElementById('login-overlay');
 const profileListEl = document.getElementById('profile-list');
 const createProfileBox = document.getElementById('create-profile-box');
@@ -130,7 +134,38 @@ async function init() {
         if (state.allInActive) {
             state.allInActive = false;
         }
+
+        // Special check: If balance is 0 but has crowns, force rescue
+        const crownCount = state.profiles[state.currentPlayer]?.crownCount || 0;
+        if (state.balance <= 0 && crownCount > 0) {
+            rescueCrownDisplay.textContent = crownCount > 1 ? `👑x${crownCount}` : `👑`;
+            switchSection(resultSection, crownRescueSection);
+            return;
+        }
+
         switchSection(resultSection, setupSection);
+    };
+
+    rescueConfirmBtn.onclick = async () => {
+        const profile = state.profiles[state.currentPlayer];
+        if (profile && profile.crownCount > 0) {
+            profile.crownCount--;
+            state.balance = 500;
+
+            // Sync UI
+            const newCount = profile.crownCount;
+            if (newCount > 0) {
+                crownIconEl.classList.remove('hidden');
+                crownIconEl.textContent = newCount > 1 ? '👑x' + newCount : '👑';
+            } else {
+                crownIconEl.classList.add('hidden');
+            }
+
+            updateUI();
+            await saveGlobalData();
+            alert("CROWN EXCHANGED! 500 COINS RECEIVED.");
+            switchSection(crownRescueSection, setupSection);
+        }
     };
 
     createProfileBtn.onclick = createNewProfile;
