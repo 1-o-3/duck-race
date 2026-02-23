@@ -35,7 +35,7 @@ const PERSONALITIES = [
     { name: "SLEEPY DUCK", weight: 0.2, multiplier: 5.5, desc: "0（停留）が多くマイペース" },
     { name: "SLOW STICKER", weight: -0.3, multiplier: 6.2, desc: "とにかくのんびり屋" },
     { name: "BACKWARD KING", weight: -0.5, multiplier: 7.0, desc: "マイナスが出やすい。勝てば伝説" },
-    { name: "DARK HORSE", weight: 0.0, multiplier: 7.5, desc: "勝てば7.5倍、負ければ-1.5倍の超博打", isDarkHorse: true }
+    { name: "DARK HORSE", weight: 0.1, multiplier: 7.5, desc: "勝てば7.5倍、負ければ賭け金×1.5を失う魔のアヒル" }
 ];
 
 
@@ -514,25 +514,30 @@ function showResults() {
     const winnerId = state.winners[0];
     const winnerDuck = state.ducks.find(d => d.id === winnerId);
 
-    // Check all bets
-    let totalResult = 0;
+    // Calculate payouts
+    let totalPayout = 0;
 
-    // Winner payout
+    // 1. Regular win payout
     if (state.bettingDucks[winnerId]) {
         const amount = state.bettingDucks[winnerId];
-        totalResult += Math.floor(amount * winnerDuck.multiplier);
+        totalPayout = Math.floor(amount * winnerDuck.multiplier);
     }
 
-    // Dark Horse Penalty (If you bet on it and it LOST)
+    // 2. Specialized Penalty for DARK HORSE
+    // If you bet on DARK HORSE and it's NOT the winner, apply penalty
     state.ducks.forEach(duck => {
-        if (duck.isDarkHorse && duck.id !== winnerId && state.bettingDucks[duck.id]) {
-            const betAmount = state.bettingDucks[duck.id];
-            totalResult -= Math.floor(betAmount * 1.5);
+        if (duck.name === "DARK HORSE" && state.bettingDucks[duck.id] && duck.id !== winnerId) {
+            const betOnDarkHorse = state.bettingDucks[duck.id];
+            // Penalty: lose 1.5x the bet. 
+            // Note: the 1.0x (original bet) is already deducted at changeBet.
+            // So we subtract an additional 0.5x to make it 1.5x total loss.
+            const extraLoss = Math.floor(betOnDarkHorse * 0.5);
+            state.balance -= extraLoss;
+            if (state.balance < 0) state.balance = 0;
         }
     });
 
-    state.balance += totalResult;
-    if (state.balance < 0) state.balance = 0;
+    state.balance += totalPayout;
     updateUI();
 
     const winnerDisplay = document.getElementById('winner-announcement');
@@ -542,16 +547,11 @@ function showResults() {
     `;
 
     const payoutEl = document.getElementById('payout-result');
-    if (totalResult >= 0) {
-        payoutEl.textContent = `+${totalResult}`;
-        payoutEl.style.color = 'var(--primary)';
-    } else {
-        payoutEl.textContent = `${totalResult}`;
-        payoutEl.style.color = 'red';
-    }
+    payoutEl.textContent = `+${totalPayout}`;
+    payoutEl.style.color = totalPayout > 0 ? 'var(--primary)' : 'red';
 
     const title = document.getElementById('result-title');
-    title.textContent = totalResult > 0 ? "BIG WINNER!" : (totalResult < 0 ? "BIG LOSS..." : "GAME OVER");
+    title.textContent = totalPayout > 0 ? "BIG WINNER!" : "GAME OVER";
 
     switchSection(raceSection, resultSection);
 }
