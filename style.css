@@ -568,17 +568,18 @@ header {
     position: relative;
     font-size: 8px;
     border: 1px solid #fff;
+    margin-top: 10px; /* Space for the tail */
 }
 
 .pity-message::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    top: -10px; /* Position at the top */
     left: 50%;
     transform: translateX(-50%);
-    border-width: 10px 10px 0;
+    border-width: 0 10px 10px; /* Tail pointing up */
     border-style: solid;
-    border-color: #333 transparent transparent;
+    border-color: transparent transparent #333;
 }
 
 
