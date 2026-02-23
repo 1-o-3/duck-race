@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+    <!-- Head -->
+    <rect x="6" y="2" width="6" height="5" fill="#FFEE00" />
+    <!-- Body -->
+    <rect x="3" y="7" width="11" height="6" fill="#FFEE00" />
+    <!-- Tail -->
+    <rect x="1" y="8" width="2" height="3" fill="#FFEE00" />
+    <!-- Beak -->
+    <rect x="12" y="4" width="3" height="2" fill="#FF9900" />
+    <!-- Eye -->
+    <rect x="9" y="4" width="1" height="1" fill="#000000" />
+    <!-- Wing Shadow -->
+    <rect x="6" y="9" width="5" height="2" fill="#E6CC00" />
+</svg>

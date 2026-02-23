@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duck Derby | Pixel Retro Race</title>
+    <meta name="description" content="レトロなピクセルアヒルレース！">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="crt-overlay"></div>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <img src="pixel_duck.svg" alt="Duck" class="logo-pixel">
+                <h1>DUCK DERBY</h1>
+            </div>
+            <div class="stats-bar">
+                <div class="stat-box">
+                    <span class="label">COINS:</span>
+                    <span id="coin-balance" class="value">1000</span>
+                </div>
+                <div class="stat-box">
+                    <span class="label">TOTAL BET:</span>
+                    <span id="total-bet-display" class="value">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- STAGE 1: SETUP -->
+            <section id="setup-section" class="screen">
+                <h2 class="title-pixel">RACE CONFIG</h2>
+                <div class="config-box">
+                    <label>NUMBER OF DUCKS (3-8)</label>
+                    <div class="pixel-stepper">
+                        <button id="duck-minus">◀</button>
+                        <span id="duck-count-display">4</span>
+                        <button id="duck-plus">▶</button>
+                    </div>
+                </div>
+                <button id="prepare-race" class="btn-pixel">PREPARE RACE</button>
+            </section>
+
+            <!-- STAGE 2: BETTING -->
+            <section id="betting-section" class="screen hidden">
+                <h2 class="title-pixel">PLACE YOUR BETS</h2>
+                <p class="subtitle">MAX 3 DUCKS / +50 PER CLICK</p>
+                <div id="duck-list" class="duck-bet-list">
+                    <!-- Ducks injected here -->
+                </div>
+                <div class="bet-actions">
+                    <button id="start-race" class="btn-pixel btn-large" disabled>START RACE!</button>
+                    <button id="back-to-setup" class="btn-pixel secondary">RESET</button>
+                </div>
+            </section>
+
+            <!-- STAGE 3: RACE -->
+            <section id="race-section" class="screen hidden">
+                <div class="race-header">
+                    <div id="race-status" class="status-pixel">READY?</div>
+                </div>
+                <div id="race-track" class="pixel-track">
+                    <!-- Lanes -->
+                </div>
+            </section>
+
+            <!-- STAGE 4: RESULT -->
+            <section id="result-section" class="screen hidden">
+                <h2 id="result-title" class="title-pixel">WINNER!</h2>
+                <div id="winner-announcement" class="winner-display">
+                    <!-- Winner sprite & name -->
+                </div>
+                <div class="payout-box">
+                    <div class="result-row">
+                        <span>YOUR WINNINGS:</span>
+                        <span id="payout-result" class="value-win">+0</span>
+                    </div>
+                </div>
+                <button id="new-race" class="btn-pixel">NEXT RACE</button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Hidden audio elements for later if needed -->
+    <script src="script.js"></script>
+</body>
+
+</html>
